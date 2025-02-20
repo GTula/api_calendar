@@ -1,0 +1,15 @@
+# Ignorar entorno virtual
+venv/
+ENV/
+
+# Archivos de base de datos
+*.sqlite3
+
+# Credenciales y tokens sensibles
+credentials.json
+token.json
+
+# Archivos de caché de Python
+__pycache__/
+*.pyc
+*.pyo
