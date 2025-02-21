@@ -75,25 +75,28 @@ def get_freetime(now, end):
         event_start = datetime.fromisoformat(event["start"]["dateTime"].replace("Z", "+00:00"))
         event_end = datetime.fromisoformat(event["end"]["dateTime"].replace("Z", "+00:00"))
 
+        start = current_time.hour * 60 + current_time.minute
+        end = event_start.hour * 60 + event_start.minute
+
         if current_time.strftime("%H:%M") < event_start.strftime("%H:%M"):  
             free_time.append({
                 "day": datetime.fromisoformat(event["start"]["dateTime"].replace("Z", "+00:00")).date().strftime("%Y-%m-%d"),
-                "start": current_time.strftime("%H:%M"),
-                "end": event_start.strftime("%H:%M")
+                "start": start,
+                "end": end
             })
         current_time = event_end  
 
-    print(current_time, work_end)
+    start = current_time.hour * 60 + current_time.minute
+    end = work_end.hour * 60 + work_end.minute
 
     if current_time.strftime("%H:%M") < work_end.strftime("%H:%M"):
         free_time.append({
             "day": datetime.fromisoformat(event["start"]["dateTime"].replace("Z", "+00:00")).date().strftime("%Y-%m-%d"),
-            "start": current_time.strftime("%H:%M"),
-            "end": work_end.strftime("%H:%M")
+            "start": start,
+            "end": end
         })
 
     return free_time
-
 
 
 def new_event(summary, start, end):
