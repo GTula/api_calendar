@@ -10,6 +10,7 @@ SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 EMAIL = "guillotula@gmail.com" # Email de ejemplo
 TOKEN_PATH = 'token.json'
 CREDENTIALS_PATH = 'credentials.json'
+url = f"https://www.googleapis.com/calendar/v3/calendars/{EMAIL}/events"
 
 
 def get_credentials():
@@ -38,8 +39,6 @@ def get_credentials():
 def get_events(time_min, time_max):
     """Obtiene eventos de Google Calendar entre fechas específicas."""
     creds = get_credentials()
-    url = f"https://www.googleapis.com/calendar/v3/calendars/{EMAIL}/events"
-
     headers = {
         "Authorization": f"Bearer {creds.token}",
         "Accept": "application/json"
@@ -66,29 +65,49 @@ def get_freetime(now, end):
     free_time = []
     events = get_events(now, end)
 
-    work_start = datetime.strptime("09:00", "%H:%M").replace(tzinfo=timezone.utc)
-    work_end = datetime.strptime("18:00", "%H:%M").replace(tzinfo=timezone.utc)
-    current_time = work_start
+    event_day = datetime.fromisoformat(now.replace("Z", "+00:00")).date()  # Extraer solo la fecha
 
+    work_start = datetime.combine(event_day, datetime.strptime("09:00", "%H:%M").time(), tzinfo=timezone.utc)
+    work_end = datetime.combine(event_day, datetime.strptime("18:00", "%H:%M").time(), tzinfo=timezone.utc)
+    current_time = work_start
+    
     for event in events:
         event_start = datetime.fromisoformat(event["start"]["dateTime"].replace("Z", "+00:00"))
         event_end = datetime.fromisoformat(event["end"]["dateTime"].replace("Z", "+00:00"))
 
-        event_day = event_start.strftime("%Y-%m-%d")
-
-        if current_time < event_start:  
+        if current_time.strftime("%H:%M") < event_start.strftime("%H:%M"):  
             free_time.append({
-                "day": event_day,
+                "day": datetime.fromisoformat(event["start"]["dateTime"].replace("Z", "+00:00")).date().strftime("%Y-%m-%d"),
                 "start": current_time.strftime("%H:%M"),
                 "end": event_start.strftime("%H:%M")
             })
-
         current_time = event_end  
 
-    free_time.append({
-        "day": event_day,
-        "start": current_time.strftime("%H:%M"),
-        "end": work_end.strftime("%H:%M")
-    })
+    print(current_time, work_end)
+
+    if current_time.strftime("%H:%M") < work_end.strftime("%H:%M"):
+        free_time.append({
+            "day": datetime.fromisoformat(event["start"]["dateTime"].replace("Z", "+00:00")).date().strftime("%Y-%m-%d"),
+            "start": current_time.strftime("%H:%M"),
+            "end": work_end.strftime("%H:%M")
+        })
 
     return free_time
+
+
+
+def new_event(summary, start, end):
+
+    creds = get_credentials()
+    headers = {
+        "Authorization": f"Bearer {creds.token}",
+        "Accept": "application/json"
+    }
+
+    event_data = {
+        "summary": summary,
+        "start": {"dateTime": start, "timeZone": "UTC"},
+        "end": {"dateTime": end, "timeZone": "UTC"}
+    }
+    response = requests.post(url, headers=headers, data=json.dumps(event_data))
+
