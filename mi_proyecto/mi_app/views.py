@@ -20,7 +20,7 @@ def new_meet(request):
     """Vista de Django para crear un nuevo evento en el calendario."""
 
     event = {
-        "list": ["guillotula@gmail.com, dsuperate@gmail.com"],  # Ahora es una lista real
+        "list": ["guillotula@gmail.com", "dsuperate@gmail.com"],  # Ahora es una lista real
         "summary": "Reunión de trabajo",
         "start": "2025-02-25T10:00:00",
         "end": "2025-02-25T11:00:00"

@@ -109,10 +109,10 @@ def get_events(user, time_min, time_max):
 
     try:
         response = requests.get(url, headers=headers, params=params)
-        response.raise_for_status()  # Lanza un error si falla la request
+        response.raise_for_status()  # se lanza un error si falla la request
         events = response.json().get("items", [])
 
-        if events is None:  # Asegura que sea una lista
+        if events is None:  # aseguramos que sea una lista
             return []
 
         return events
@@ -127,21 +127,22 @@ def get_events(user, time_min, time_max):
 
 def get_freetime(user, day):
     free_time = []
-    day = day.split("T")[0]  # Asegura que esté en formato YYYY-MM-DD
+    day = day.split("T")[0]  # aseguramos que esté en formato YYYY-MM-DD
 
-    # Definir la zona horaria local (ejemplo: Montevideo, UTC-3)
-    local_offset = timedelta(hours=-3)  # Ajustá según tu zona horaria
+    # se define la zona horaria local (Montevideo, UTC-3)
+    local_offset = timedelta(hours=-3)  
     local_tz = timezone(local_offset)
 
-    # Crear las horas de trabajo en la zona horaria local
+    # se crea las horas de trabajo en la zona horaria local 
+    # (esto habría que cambiarlo porque cada usuario puede tener un horario de trabajo distinto)
     work_start = datetime.strptime(f"{day} 09:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=local_tz)
     work_end = datetime.strptime(f"{day} 18:00:00", "%Y-%m-%d %H:%M:%S").replace(tzinfo=local_tz)
 
-    # Convertir a UTC
+    # se convierte a UTC
     work_start_utc = work_start.astimezone(timezone.utc)
     work_end_utc = work_end.astimezone(timezone.utc)
 
-    # Convertir a string ISO 8601 para la API de Google Calendar
+    # se convierte a string ISO 8601 para la API de Google Calendar
     work_start_iso = work_start_utc.isoformat()
     work_end_iso = work_end_utc.isoformat()
 
@@ -150,7 +151,7 @@ def get_freetime(user, day):
     work_start_minutes = 9 * 60  # 540 minutos (09:00 AM)
     work_end_minutes = 18 * 60  # 1080 minutos (18:00 PM)
 
-    current_time = work_start_minutes  # Empieza desde las 09:00
+    current_time = work_start_minutes  
 
     for event in events:
         print(current_time)
@@ -165,9 +166,9 @@ def get_freetime(user, day):
             print("tiempo libre:", current_time, start_minutes)
             free_time.append((current_time, start_minutes))
 
-        current_time = end_minutes  # Actualiza el tiempo actual al fin del evento
+        current_time = end_minutes  # actualiza el tiempo actual al fin del evento
 
-    # Último bloque de tiempo libre después del último evento
+    # último bloque de tiempo libre después del último evento
     if current_time < work_end_minutes:
         free_time.append((current_time, work_end_minutes))
 
@@ -202,59 +203,46 @@ def new_event(user, summary, start, end):
 
 
 def new_event_meet(usersList, summary, start, end):
-    event_links = []
-    meet_links = []
+    if not usersList:
+        return {"success": False, "error": "No hay usuarios en la lista."}
 
-    for email in usersList:
-        attendees_list = [{"email": email}]
+    attendees_list = [{"email": email} for email in usersList]  # asistentes
 
-        # Obtener credenciales para cada usuario
-        creds = get_credentials_from_bd(email)
-
-        # Crear el servicio con las credenciales del usuario
-        service = build('calendar', 'v3', credentials=creds)
-
-        event = {
-            "summary": "Reunión de equipo",
-            "location": "Google Meet",
-            "description": summary,
-            "start": {
-                "dateTime": start,  # Verificar formato: "YYYY-MM-DDTHH:MM:SS-03:00"
-                "timeZone": "America/Montevideo",
-            },
-            "end": {
-                "dateTime": end,  # Verificar formato: "YYYY-MM-DDTHH:MM:SS-03:00"
-                "timeZone": "America/Montevideo",
-            },
-            "attendees": attendees_list,
-            "conferenceData": {
-                "createRequest": {
-                    "conferenceSolutionKey": {"type": "hangoutsMeet"},
-                    "requestId": str(uuid.uuid4())  # Generar un ID único para la reunión
-                }
+    event = {
+        "summary": "Reunión de equipo",
+        "location": "Google Meet",
+        "description": summary,
+        "start": {
+            "dateTime": start,  
+            "timeZone": "America/Montevideo",
+        },
+        "end": {
+            "dateTime": end, 
+            "timeZone": "America/Montevideo",
+        },
+        "attendees": attendees_list,  # lista de todos los usuarios como invitados
+        "conferenceData": {
+            "createRequest": {
+                "conferenceSolutionKey": {"type": "hangoutsMeet"},
+                "requestId": str(uuid.uuid4())  # ID único para la reunión
             }
         }
-
-        # Crea el evento en el calendario principal del usuario autenticado
-        try:
-            event_response = service.events().insert(
-                calendarId="primary",  # Usa 'primary' para el calendario del usuario autenticado
-                body=event,
-                conferenceDataVersion=1  # Necesario para crear reuniones de Google Meet
-            ).execute()
-
-            event_links.append(event_response.get("htmlLink"))  # Enlace al evento en Google Calendar
-            meet_links.append(event_response.get("conferenceData", {}).get("entryPoints", [{}])[0].get("uri"))  # Link de Google Meet
-
-        except HttpError as error:
-            return {
-                "success": False,
-                "error": error.resp.status,
-                "message": error._get_reason()
-            }
-
-    return {
-        "success": True,
-        "eventLinks": event_links,  # Lista de enlaces de eventos
-        "meetLinks": meet_links  # Lista de enlaces de Google Meet
     }
+
+    meet_owner = usersList[0]  # el organizador es el primero en la lista
+    creds = get_credentials_from_bd(meet_owner)
+    service = build('calendar', 'v3', credentials=creds)
+
+    try:
+        service.events().insert(
+            calendarId="primary",
+            body=event,
+            conferenceDataVersion=1,  
+            sendUpdates="all"
+        ).execute()
+        return {"success": True, "message": "Evento creado con éxito."}
+    except HttpError as e:
+        return {"success": False, "error": f"Error al crear evento: {e}"}
+
+
+
