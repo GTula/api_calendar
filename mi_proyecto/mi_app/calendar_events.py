@@ -17,7 +17,7 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 CREDENTIALS_PATH = 'credentials.json'
 
 
-
+# toma un email y dia y hora en formato ISO 8601 y devuelve una lista de eventos
 def get_events(user, time_min, time_max):
     url = f"https://www.googleapis.com/calendar/v3/calendars/{user}/events"
 
@@ -53,9 +53,7 @@ def get_events(user, time_min, time_max):
         return []
 
 
-
-
-
+#toma un email, un día en formato YYYY-MM-DD y devuelve una lista de tuplas con los bloques de tiempo libre
 def get_freetime(user, day):
     free_time = []
     day = day.split("T")[0]  # aseguramos que esté en formato YYYY-MM-DD
@@ -107,8 +105,6 @@ def get_freetime(user, day):
 
 
 
-
-
 def new_event(user, summary, start, end):
     url = f"https://www.googleapis.com/calendar/v3/calendars/{user}/events"
 
@@ -132,7 +128,8 @@ def new_event(user, summary, start, end):
         return {"error": response.status_code, "message": response.text}
     
 
-
+#toma un lista de emails, un título para el evento y una fecha de inicio y fin en formato ISO 8601
+#y crea un evento meeting en el calendario
 def new_event_meet(usersList, summary, start, end):
     if not usersList:
         return {"success": False, "error": "No hay usuarios en la lista."}
@@ -140,7 +137,7 @@ def new_event_meet(usersList, summary, start, end):
     attendees_list = [{"email": email} for email in usersList]  # asistentes
 
     event = {
-        "summary": "Reunión de equipo",
+        "summary": summary,
         "location": "Google Meet",
         "description": summary,
         "start": {
