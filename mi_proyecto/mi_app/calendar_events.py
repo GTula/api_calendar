@@ -162,15 +162,17 @@ def new_event_meet(usersList, summary, start, end):
     service = build('calendar', 'v3', credentials=creds)
 
     try:
-        service.events().insert(
+        created_event = service.events().insert(
             calendarId="primary",
             body=event,
             conferenceDataVersion=1,  
             sendUpdates="all"
         ).execute()
-        return {"success": True, "message": "Evento creado con éxito."}
+        meet_link = created_event.get("hangoutLink")
+        return {"success": True, "message": "Evento creado con éxito.", "link": meet_link}
     except HttpError as e:
         return {"success": False, "error": f"Error al crear evento: {e}"}
+
 
 
 

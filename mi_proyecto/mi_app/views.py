@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from mi_app.calendar_events import get_freetime
+from mi_app.calendar_events import get_freetime, get_events
 from mi_app.calendar_events import new_event_meet
 
 
@@ -13,6 +13,7 @@ def calendar_events(request):
     # Obtener fecha y hora actual en formato ISO 8601
     now = datetime.utcnow().isoformat() + "Z"
 
+    print(get_events(EMAIL, "2025-03-14T07:00:00Z", "2025-03-14T18:30:00Z"))
     eventos = get_freetime(EMAIL, now)
     
     return JsonResponse(eventos, safe=False)
@@ -23,8 +24,8 @@ def new_meet(request):
     event = {
         "list": ["guillotula@gmail.com", "dsuperate@gmail.com"],  # Ahora es una lista real
         "summary": "Reunión de trabajo",
-        "start": "2025-02-26T11:00:00",
-        "end": "2025-02-26T11:30:00"
+        "start": "2025-03-14T11:00:00",
+        "end": "2025-03-14T11:30:00"
     }
 
 

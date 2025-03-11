@@ -4,7 +4,7 @@ from .views import calendar_events, new_meet
 
 
 urlpatterns = [
-    path('freetime/', calendar_events, name='calendar_events'),
+    path('', calendar_events, name='calendar_events'),
     path('new_event/', new_meet, name='new_meet'),
 
 ]
