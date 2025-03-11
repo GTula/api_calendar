@@ -105,27 +105,6 @@ def get_freetime(user, day):
 
 
 
-def new_event(user, summary, start, end):
-    url = f"https://www.googleapis.com/calendar/v3/calendars/{user}/events"
-
-    creds = get_credentials_from_bd(user)
-    headers = {
-        "Authorization": f"Bearer {creds.token}",
-        "Accept": "application/json"
-    }
-
-    event_data = {
-        "summary": summary,
-        "start": {"dateTime": start, "timeZone": "UTC"},
-        "end": {"dateTime": end, "timeZone": "UTC"}
-    }
-
-    response = requests.post(url, headers=headers, data=json.dumps(event_data))
-
-    if response.status_code == 200:
-        return response.json().get('items', [])  # lista los eventos
-    else:
-        return {"error": response.status_code, "message": response.text}
     
 
 #toma un lista de emails, un título para el evento y una fecha de inicio y fin en formato ISO 8601
